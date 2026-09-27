@@ -74,7 +74,6 @@ int trace_vfs_write(struct pt_regs *ctx)
 SEC("kprobe/notify_change")
 int trace_setattr(struct pt_regs *ctx)
 {
-    /* notify_change(struct mnt_idmap *idmap, struct dentry *dentry, ...) */
     struct dentry *dentry = (struct dentry *)PT_REGS_PARM2(ctx);
     struct inode *inode = BPF_CORE_READ(dentry, d_inode);
 
@@ -112,11 +111,9 @@ int trace_delete(struct pt_regs *ctx)
     return 0;
 }
 
-
 SEC("kprobe/vfs_rename")
 int trace_move(struct pt_regs *ctx)
 {
-    /* vfs_rename(struct renamedata *rd) */
     struct renamedata *rd = (struct renamedata *)PT_REGS_PARM1(ctx);
     struct dentry *old_dentry = BPF_CORE_READ(rd, old_dentry);
     struct inode *inode = BPF_CORE_READ(old_dentry, d_inode);
