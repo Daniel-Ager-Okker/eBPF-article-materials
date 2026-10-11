@@ -159,7 +159,9 @@ func seedWatchTree(objs *fimObjects, watchPath string, rootIno uint64, maxEntrie
 		}
 		childIno := uint64(st.Ino)
 		if err := objs.WatchedInodes.Put(childIno, one); err != nil {
-			return err
+			// e.g. the map is full: skip the entry and keep walking
+			skipped++
+			return nil
 		}
 		watchCount++
 		if d.IsDir() {
@@ -167,8 +169,10 @@ func seedWatchTree(objs *fimObjects, watchPath string, rootIno uint64, maxEntrie
 		}
 		return nil
 	}); err != nil {
-		log.Fatalf("Walking watch tree: %v (added %d/%d inodes, map is full: raise max_entries in fim.bpf.c and re-run make)",
-			err, watchCount, maxEntries)
+		log.Fatal("Walking watch tree:", err)
+	}
+	if skipped > 0 {
+		log.Printf("warning: %d entries were not watched (map capacity %d)", skipped, maxEntries)
 	}
 	return dirPaths, watchCount, skipped
 }

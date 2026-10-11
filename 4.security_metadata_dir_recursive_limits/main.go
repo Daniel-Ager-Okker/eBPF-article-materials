@@ -147,7 +147,9 @@ func seedWatchTree(objs *fimObjects, watchPath string, rootIno uint64) (dirPaths
 		}
 		childIno := uint64(st.Ino)
 		if err := objs.WatchedInodes.Put(childIno, one); err != nil {
-			return err
+			// e.g. the map is full: skip the entry and keep walking
+			skipped++
+			return nil
 		}
 		watchCount++
 		if d.IsDir() {
@@ -156,6 +158,9 @@ func seedWatchTree(objs *fimObjects, watchPath string, rootIno uint64) (dirPaths
 		return nil
 	}); err != nil {
 		log.Fatal("Walking watch tree:", err)
+	}
+	if skipped > 0 {
+		log.Printf("warning: %d entries were not watched", skipped)
 	}
 	return dirPaths, watchCount, skipped
 }
